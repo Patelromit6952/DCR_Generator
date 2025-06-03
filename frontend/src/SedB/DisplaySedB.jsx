@@ -58,7 +58,7 @@ export const DisplaySedB = () => {
               <thead className="bg-gray-800 text-white">
                 <tr>
                   <th className="py-2 px-4 border">Item. No</th>
-                  <th className="py-2 px-4 border">Item of Work</th>
+                  <th className="py-2 px-4 border">Item of</th>
                   <th className="py-2 px-4 border">Qty</th>
                   <th className="py-2 px-4 border">Rate</th>
                   <th className="py-2 px-4 border">Unit</th>

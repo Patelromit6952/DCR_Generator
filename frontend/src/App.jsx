@@ -5,6 +5,7 @@ import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { DisplaySedB } from './SedB/DisplaySedB';
 import { Home } from './Home/Home';
+import Quatationform from './quatationform/Quatationform';
 
 const App = () => {
   const  myRouter = createBrowserRouter([
@@ -15,6 +16,7 @@ const App = () => {
          {path:'',element:<Home/>},
         {path:'/dashboard/home',element:<Home/>},
         {path:'/dashboard/SedB',element:<DisplaySedB/>},
+        {path:'/dashboard/createform',element:<Quatationform/>},
       ]
     }
   ])
