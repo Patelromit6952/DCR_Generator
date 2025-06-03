@@ -38,7 +38,7 @@ app.post('/api/login',async(req,res)=>{
         const user = await db.collection('Users').findOne({email});
         if(!user){
             return res.status(500).json({
-                message:"User Not Registered                   !",
+                message:"User Not Registered!",
                 error:true,
                 success:false
             })
