@@ -15,7 +15,6 @@ const Login = () => {
     try {
       const response = await api.login({email,password})
       const data = response.data
-      console.log(data);
       if(data.success){
         localStorage.setItem('uId',data.data._id)
         localStorage.setItem('email',data.data.email)
