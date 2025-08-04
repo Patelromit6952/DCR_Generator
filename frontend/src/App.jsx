@@ -14,6 +14,7 @@ import ESRoom from './Electric_Store_Room/ESRoom';
 import SecurityCabin from './SecurityCabin/SecurityCabin';
 import ProtectedRoute from './ProtectedRoute';
 import DisplayAllQuotations from './Quotations/DisplayAllQuotations';
+import BillGenerator from './GenerateBill/BillGenerator';
 
 const App = () => {
   const  myRouter = createBrowserRouter([
@@ -24,6 +25,7 @@ const App = () => {
          {path:'',element:<Home/>},
         {path:'/dashboard/home',element:<Home/>},
         {path:'/dashboard/createform',element:<Quatationform/>},
+        {path:'/dashboard/bill',element:<BillGenerator/>},
         {path:'/dashboard/displayquotations',element:<DisplayAllQuotations/>},
         {path:'/dashboard/createform/sedB',element:<DisplaySedB/>},
         {path:'/dashboard/createform/PaverBlock',element:<PaverBlock/>},

@@ -17,6 +17,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import api from '../Backend_api/SummaryApi';
+
 const Link = ({ to, children, className, ...props }) => (
   <a href={to} className={className} {...props}>
     {children}
@@ -32,13 +33,31 @@ const staticStats = {
   revenueGrowth: 15.7
 };
 
-
 export const Home = () => {
   // State for dynamic data (now using static data)
   const [stats, setStats] = useState(staticStats);
   const [recentQuotations, setRecentQuotations] = useState([]);
-  const [loading, setLoading] = useState(false); // Set to false since we're using static data
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Function to format currency in Indian format (lakh, crore)
+  const formatIndianCurrency = (num) => {
+    if (num >= 10000000) { // 1 crore
+      return (num / 10000000).toFixed(2).replace(/\.00$/, '') + ' crore';
+    } else if (num >= 100000) { // 1 lakh
+      return (num / 100000).toFixed(2).replace(/\.00$/, '') + ' lakh';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(2).replace(/\.00$/, '') + ' thousand';
+    } else {
+      return num.toString();
+    }
+  };
+
+  // Function to calculate revenue growth
+  const calculateRevenueGrowth = (currentRevenue, previousRevenue) => {
+    if (previousRevenue === 0) return 0;
+    return ((currentRevenue - previousRevenue) / previousRevenue * 100).toFixed(1);
+  };
 
   // Simulate data loading (optional - for demo purposes)
   const fetchData = async () => {
@@ -61,10 +80,10 @@ export const Home = () => {
         // 2. Total Quotations
         const total = allQuotations.length;
 
-        // 3. Monthly Revenue
+        // 3. Monthly Revenue (Current Month)
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-        const monthlyRevenue = Math.round(
+        const currentMonthRevenue = Math.round(
           allQuotations
             .filter((q) => {
               const date = new Date(q.quotationDate);
@@ -73,22 +92,37 @@ export const Home = () => {
             .reduce((sum, q) => sum + (q.amount || 0), 0)
         );
 
-        // 4. Pending Quotations
+        // 4. Previous Month Revenue for growth calculation
+        const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        const previousMonthRevenue = Math.round(
+          allQuotations
+            .filter((q) => {
+              const date = new Date(q.quotationDate);
+              return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
+            })
+            .reduce((sum, q) => sum + (q.amount || 0), 0)
+        );
+
+        // 5. Calculate revenue growth
+        const revenueGrowth = calculateRevenueGrowth(currentMonthRevenue, previousMonthRevenue);
+
+        // 6. Pending Quotations
         const pendingCount = allQuotations.filter(q => q.status === 'Pending').length;
 
-        // 5. Set stats 
+        // 7. Set stats 
         setStats((prev) => ({
           ...prev,
           totalQuotations: total,
-          monthlyRevenue,
-          pendingQuotations: pendingCount
+          monthlyRevenue: currentMonthRevenue,
+          pendingQuotations: pendingCount,
+          revenueGrowth: parseFloat(revenueGrowth)
         }));
       }
     } catch (error) {
       console.error("Error fetching quotations:", error);
     }
   };
-
 
   useEffect(() => { fetchQuotations() }, []);
 
@@ -101,7 +135,6 @@ export const Home = () => {
       default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
-
 
   if (error) {
     return (
@@ -121,12 +154,6 @@ export const Home = () => {
             >
               <RefreshCw className="w-4 h-4" />
               <span>Retry Connection</span>
-            </button>
-            <button
-              onClick={handleSeedDatabase}
-              className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition"
-            >
-              Initialize Sample Data
             </button>
           </div>
           <p className="text-sm text-gray-500 mt-4">
@@ -174,7 +201,7 @@ export const Home = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-xl">
             <div className="flex items-center justify-between">
               <div>
@@ -216,12 +243,11 @@ export const Home = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
                 <p className="text-2xl font-bold text-green-600">
-                  ₹{loading ? '...' : (typeof stats.monthlyRevenue === 'number' ? stats.monthlyRevenue.toLocaleString() : '0')}
-
+                  ₹{loading ? '...' : formatIndianCurrency(stats.monthlyRevenue)}
                 </p>
-                <p className="text-xs text-green-600 flex items-center mt-1">
+                <p className={`text-xs flex items-center mt-1 ${stats.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   <TrendingUp className="w-3 h-3 mr-1" />
-                  {stats.revenueGrowth > 0 ? '+' : ''}{stats.revenueGrowth}% from last month
+                  {stats.revenueGrowth >= 0 ? '+' : ''}{stats.revenueGrowth}% from last month
                 </p>
               </div>
               <div className="bg-green-100 p-3 rounded-full">
@@ -349,12 +375,12 @@ export const Home = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-bold text-gray-500">
-                       {quotation.quotationType}
+                        {quotation.quotationType}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-bold text-gray-900">
-                        ₹{typeof quotation.amount === 'number' ? Math.round(quotation.amount).toLocaleString('en-IN') : '0'}
+                        ₹{typeof quotation.amount === 'number' ? formatIndianCurrency(quotation.amount) : '0'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -371,7 +397,6 @@ export const Home = () => {
             </table>
           </div>
         </div>
-
 
         {/* About Section */}
         <section className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 py-10 px-8 rounded-3xl mb-8 shadow-2xl relative overflow-hidden">
@@ -406,7 +431,7 @@ export const Home = () => {
       </div>
 
       {/* Footer */}
-      <footer className=" bg-gradient-to-br from-blue-50 to-indigo-100  py-8">
+      <footer className="bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm text-gray-600 mb-2">&copy; 2025 RK Technologies. All rights reserved.</p>
           <p className="text-sm text-gray-500">
