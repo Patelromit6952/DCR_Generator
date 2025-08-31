@@ -379,8 +379,8 @@ export const Home = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-bold text-gray-900">
-                        ₹{typeof quotation.amount === 'number' ? formatIndianCurrency(quotation.amount) : '0'}
+                      <span className="text-sm font-bold text-green-600">
+                        ₹{typeof quotation.amount === 'number' ? Math.round(quotation.amount).toLocaleString('en-In') : '0'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
