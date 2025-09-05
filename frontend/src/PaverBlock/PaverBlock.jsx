@@ -64,6 +64,7 @@ const PaverBlock = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [currentQuotationId, setCurrentQuotationId] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [workname,setworkname] = useState("");
 
   const quotationType = 'paverblock';
 
@@ -188,6 +189,7 @@ const PaverBlock = () => {
     try {
       const quotationData = {
         quotationType: quotationType,
+        workname:workname,
         clientDetails: quotationState.clientDetails,
         schedules: data,
         summary: {
@@ -275,8 +277,8 @@ const PaverBlock = () => {
             try {              
               console.log(data);
                             
-                const pdfTemplate1 = generateAbstractPDFTemplate(data);
-                const pdfTemplate2 = generateMeasurementPDFTemplate(data);
+                const pdfTemplate1 = generateAbstractPDFTemplate(data,workname);
+                const pdfTemplate2 = generateMeasurementPDFTemplate(data.workname);
               const pdfWindow1 = createPDFWindow('PaverBlock Quotation');
               const pdfWindow2 = createPDFWindow('PaverBlock Measurement Sheet');
               if (pdfWindow1) {
@@ -337,6 +339,8 @@ const PaverBlock = () => {
           labourCessRate={labourCessRate}
           setLabourCessRate={setLabourCessRate}
           onLabourCessChange={handleLabourCessChange}
+           workname={workname} 
+          setworkname={setworkname}
         />
 
         {/* Main content with schedules */}

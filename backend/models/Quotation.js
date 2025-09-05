@@ -33,6 +33,7 @@ const summarySchema = new mongoose.Schema({
 
 const quotationSchema = new mongoose.Schema({
   quotationType: { type: String, required: true },
+  workname: { type: String, required: true },
   clientDetails: clientDetailsSchema,
   schedules: [scheduleSchema],
   summary: summarySchema,

@@ -32,14 +32,35 @@ const calculateItemAmounts = (item, labourCessRate) => {
     amount: parseFloat(amount.toFixed(2))
   };
 };
+const transformQuotationData = (quotationData) => {
+  if (!quotationData || !quotationData.schedules) {
+    return [];
+  }
 
+  return quotationData.schedules.map(schedule => ({
+    ...schedule,
+    item_of_works: schedule.item_of_works?.map(item => ({
+      ...item,
+      qty: item.qty || 0,
+      rate: item.rate || 0,
+      amount: item.amount || ((item.qty || 0) * (item.rate || 0)),
+      calcRows: item.calcRows || [],
+      labourCessOnRate: item.labourCessOnRate || 0,
+      finalRate: item.finalRate || (item.rate || 0)
+    })) || []
+  }));
+};
 const ESRoom = () => {
+    const location = useLocation();
+      const [isLoadingData, setIsLoadingData] = useState(true);
+    
   const [data, setData] = useState([]);
   const [labourCessRate, setLabourCessRate] = useState(1);
   const [showDrafts, setShowDrafts] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [currentQuotationId, setCurrentQuotationId] = useState(null); // Added missing state
+  const [workname,setworkname] = useState("");
 
   const quotationType = 'ESRoom';
 
@@ -75,10 +96,58 @@ const ESRoom = () => {
       console.error('Error fetching data:', error);
     }
   };
-
+  const loadQuotationData = (quotationData) => {
+    try {
+      console.log('Loading quotation data:', quotationData);
+      
+      // Transform and set schedules data
+      const transformedData = transformQuotationData(quotationData);
+      setData(transformedData);
+      
+      // Set labour cess rate from summary
+      if (quotationData.summary?.labourCessPercentage !== undefined) {
+        setLabourCessRate(quotationData.summary.labourCessPercentage);
+      }
+      
+      // Set client details
+      if (quotationData.clientDetails) {
+        quotationState.setClientDetails(quotationData.clientDetails);
+      }
+      
+      // Set quotation ID if available
+      if (quotationData.id || quotationData._id) {
+        setCurrentQuotationId(quotationData.id || quotationData._id);
+      }
+      
+      console.log('Quotation data loaded successfully');
+    } catch (error) {
+      console.error('Error loading quotation data:', error);
+      quotationState.setSaveMessage('Error loading quotation data');
+    }
+  };
   useEffect(() => {
-    fetchData();
-  }, []); // Add empty dependency array
+    const initializeData = async () => {
+      setIsLoadingData(true);
+      
+      try {
+        if (location.state?.quotation) {
+          // Load data from previous page
+          console.log('Loading from location state:', location.state.quotation);
+          loadQuotationData(location.state.quotation);
+        } else {
+          // Fetch fresh data from API
+          console.log('Fetching fresh data from API');
+          await fetchData();
+        }
+      } catch (error) {
+        console.error('Error initializing data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    initializeData();
+  }, [location.state]); 
 
   // Handle item changes with proper calculation updates
   const handleItemChange = (sIdx, iIdx, field, value) => {
@@ -112,6 +181,7 @@ const ESRoom = () => {
     try {
       const quotationData = {
         quotationType: quotationType,
+        workname:workname,
         clientDetails: quotationState.clientDetails,
         schedules: data,
         summary: {
@@ -182,8 +252,8 @@ const ESRoom = () => {
             try {              
               console.log(data);
                             
-                const pdfTemplate1 = generateAbstractPDFTemplate(data);
-                const pdfTemplate2 = generateMeasurementPDFTemplate(data);
+                const pdfTemplate1 = generateAbstractPDFTemplate(data,workname);
+                const pdfTemplate2 = generateMeasurementPDFTemplate(data,workname);
               const pdfWindow1 = createPDFWindow('ESRoom Quotation');
               const pdfWindow2 = createPDFWindow('ESRoom Measurement Sheet');
               if (pdfWindow1) {
@@ -244,6 +314,8 @@ const ESRoom = () => {
           labourCessRate={labourCessRate}
           setLabourCessRate={setLabourCessRate}
           onLabourCessChange={handleLabourCessChange}
+           workname={workname} 
+          setworkname={setworkname}
         />
 
         {/* Main content with schedules */}

@@ -165,7 +165,7 @@ app.post("/api/quotations/save", async (req, res) => {
     const db = await connectDB();
     const collection = db.collection("Quotations"); // Use correct plural if needed
 
-    const { quotationType, clientDetails, schedules, summary, status } =
+    const { quotationType, clientDetails, schedules, summary, status,workname } =
       req.body;
 
     if (!quotationType) {
@@ -177,6 +177,7 @@ app.post("/api/quotations/save", async (req, res) => {
 
     const quotationDoc = {
       quotationType,
+      workname,
       clientDetails,
       schedules,
       summary,

@@ -17,6 +17,7 @@ import { ScheduleSection } from '../components/ScheduleSection';
 import { SummarySection } from '../components/SummarySection';
 import { PDFLoader } from '../components/PDFLoader';
 import {  createPDFWindow, writeToPDFWindow, generateAbstractPDFTemplate, generateMeasurementPDFTemplate } from '../utils/pdfTemplates';
+import { useLocation } from 'react-router-dom';
 
 // Add the missing calculation function
 const calculateItemAmounts = (item, labourCessRate) => {
@@ -33,13 +34,36 @@ const calculateItemAmounts = (item, labourCessRate) => {
   };
 };
 
+const transformQuotationData = (quotationData) => {
+  if (!quotationData || !quotationData.schedules) {
+    return [];
+  }
+
+  return quotationData.schedules.map(schedule => ({
+    ...schedule,
+    item_of_works: schedule.item_of_works?.map(item => ({
+      ...item,
+      qty: item.qty || 0,
+      rate: item.rate || 0,
+      amount: item.amount || ((item.qty || 0) * (item.rate || 0)),
+      calcRows: item.calcRows || [],
+      labourCessOnRate: item.labourCessOnRate || 0,
+      finalRate: item.finalRate || (item.rate || 0)
+    })) || []
+  }));
+};
+
 const MainBuilding = () => {
+  const location = useLocation();
+
   const [data, setData] = useState([]);
   const [labourCessRate, setLabourCessRate] = useState(1);
   const [showDrafts, setShowDrafts] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [currentQuotationId, setCurrentQuotationId] = useState(null); // Added missing state
+  const [currentQuotationId, setCurrentQuotationId] = useState(null);
+  const [workname, setworkname] = useState("");
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const quotationType = 'mainBuilding';
 
@@ -76,9 +100,64 @@ const MainBuilding = () => {
     }
   };
 
+  const loadQuotationData = (quotationData) => {
+    try {
+      console.log('Loading quotation data:', quotationData);
+      
+      // Transform and set schedules data
+      const transformedData = transformQuotationData(quotationData);
+      setData(transformedData);
+      
+      // Set labour cess rate from summary
+      if (quotationData.summary?.labourCessPercentage !== undefined) {
+        setLabourCessRate(quotationData.summary.labourCessPercentage);
+      }
+      
+      // Set client details
+      if (quotationData.clientDetails) {
+        quotationState.setClientDetails(quotationData.clientDetails);
+      }
+
+      // Set work name - THIS WAS MISSING
+      if (quotationData.workname) {
+        setworkname(quotationData.workname);
+      }
+      
+      // Set quotation ID if available
+      if (quotationData.id || quotationData._id) {
+        setCurrentQuotationId(quotationData.id || quotationData._id);
+      }
+      
+      console.log('Quotation data loaded successfully');
+    } catch (error) {
+      console.error('Error loading quotation data:', error);
+      quotationState.setSaveMessage('Error loading quotation data');
+    }
+  };
+
   useEffect(() => {
-    fetchData();
-  }, []); // Add empty dependency array
+    const initializeData = async () => {
+      setIsLoadingData(true);
+      
+      try {
+        if (location.state?.quotation) {
+          // Load data from previous page
+          console.log('Loading from location state:', location.state.quotation);
+          loadQuotationData(location.state.quotation);
+        } else {
+          // Fetch fresh data from API
+          console.log('Fetching fresh data from API');
+          await fetchData();
+        }
+      } catch (error) {
+        console.error('Error initializing data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    initializeData();
+  }, [location.state]); 
 
   // Handle item changes with proper calculation updates
   const handleItemChange = (sIdx, iIdx, field, value) => {
@@ -125,7 +204,13 @@ const MainBuilding = () => {
         },
         createdAt: new Date(),
         status: 'Final',
+        workname: workname
       };
+
+      // If we're updating an existing quotation, include the ID
+      if (currentQuotationId) {
+        quotationData.id = currentQuotationId;
+      }
 
       const response = await api.saveQuotation(quotationData);
       if (response?.data?.success) {
@@ -157,6 +242,18 @@ const MainBuilding = () => {
     isCalculatorOpen: quantityCalculator.isCalculatorOpen
   }), [quantityCalculator, labourCessRate]);
 
+  // Show loading state while data is being loaded
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading quotation data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -182,8 +279,8 @@ const MainBuilding = () => {
             try {              
               console.log(data);
                             
-                const pdfTemplate1 = generateAbstractPDFTemplate(data);
-                const pdfTemplate2 = generateMeasurementPDFTemplate(data);
+                const pdfTemplate1 = generateAbstractPDFTemplate(data,workname);
+                const pdfTemplate2 = generateMeasurementPDFTemplate(data,workname);
               const pdfWindow1 = createPDFWindow('MainBuilding Quotation');
               const pdfWindow2 = createPDFWindow('MainBuilding Measurement Sheet');
               if (pdfWindow1) {
@@ -199,7 +296,7 @@ const MainBuilding = () => {
               setIsGeneratingPDF(false);
             }
           }}
-          onSaveQuotation={handleSaveQuotationToDB} // Pass the save function
+          onSaveQuotation={handleSaveQuotationToDB}
         />
 
         <AddScheduleForm
@@ -244,6 +341,8 @@ const MainBuilding = () => {
           labourCessRate={labourCessRate}
           setLabourCessRate={setLabourCessRate}
           onLabourCessChange={handleLabourCessChange}
+          workname={workname}
+          setworkname={setworkname}  // FIXED: Use setworkname instead of handleworknameChange
         />
 
         {/* Main content with schedules */}
