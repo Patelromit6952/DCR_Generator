@@ -297,7 +297,7 @@ export const Home = () => {
               </Link>
 
               <Link
-                to="/reports"
+                // to="/reports"
                 className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow group"
               >
                 <div className="flex items-center space-x-4">
@@ -312,7 +312,7 @@ export const Home = () => {
               </Link>
 
               <Link
-                to="/clients"
+                // to="/clients"
                 className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow group"
               >
                 <div className="flex items-center space-x-4">
@@ -327,7 +327,7 @@ export const Home = () => {
               </Link>
 
               <Link
-                to="/templates"
+                // to="/templates"
                 className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow group"
               >
                 <div className="flex items-center space-x-4">

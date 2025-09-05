@@ -3,7 +3,7 @@ import Login from './login/login';
 import Dashboard from './Dashboard/Dashboard'
 import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { DisplaySedB } from './SedB/DisplaySedB';
+import  DisplaySedB  from './SedB/DisplaySedB';
 import { Home } from './Home/Home';
 import Quatationform from './quatationform/Quatationform';
 import PaverBlock from './PaverBlock/PaverBlock';

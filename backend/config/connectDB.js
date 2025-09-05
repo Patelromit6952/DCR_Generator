@@ -12,7 +12,7 @@ let db = null;
 export default async function connectDB() {
   if (db) return db; // already connected
 
-  const client = new MongoClient(MONGODB_URI, { useUnifiedTopology: true });
+  const client = new MongoClient(MONGODB_URI);
   await client.connect();
   db = client.db(DATABASE_NAME);
   console.log(' MongoDB connected');

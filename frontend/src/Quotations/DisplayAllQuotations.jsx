@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Edit, X, Calendar, User, FileText, DollarSign, Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Search, Edit, X, Calendar, User, FileText, DollarSign, Clock, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Filter, Download } from 'lucide-react';
 import api from '../Backend_api/SummaryApi';
+import { useNavigate } from "react-router-dom";
 
 const DisplayAllQuotations = () => {
+  const navigate = useNavigate();
   const [quotations, setQuotations] = useState([]);
   const [filteredQuotations, setFilteredQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,7 @@ const DisplayAllQuotations = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -27,6 +29,7 @@ const DisplayAllQuotations = () => {
     status: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+
   useEffect(() => {
     loadQuotations();
   }, []);
@@ -203,6 +206,36 @@ const DisplayAllQuotations = () => {
     } catch (err) {
       console.error('Error saving quotation:', err);
       setError('Failed to save quotation');
+    }
+  };
+
+  // New function to handle load data based on quotation type
+  const handleLoadData = async (quotation) => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const quotationType = quotation.quotationType;
+      
+      // Define routes based on quotation type
+      const routeMapping = {
+       'sedB': '/dashboard/createform/sedB',
+        'paverblock': '/dashboard/createform/PaverBlock',
+        'rccRoad': '/dashboard/createform/RCC-Road',
+        'mainBuilding': '/dashboard/createform/Main-Building',
+        'ESRoom': '/dashboard/createform/Electric-StoreRoom',
+        'SecurityCabin': '/dashboard/createform/SecurityCabin',
+      };
+
+      // Get the appropriate route
+      const targetRoute = routeMapping[quotationType];
+      
+      navigate(targetRoute, { state: { quotationId: quotation._id, quotation } });      
+    } catch (err) {
+      console.error('Error loading quotation data:', err);
+      setError(`Failed to load ${quotation.quotationType} data`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -537,13 +570,22 @@ const DisplayAllQuotations = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => openEditModal(quote._id)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                        >
-                          <Edit className="w-3 h-3 mr-1" />
-                          Edit
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => openEditModal(quote._id)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                          >
+                            <Edit className="w-3 h-3 mr-1" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleLoadData(quote)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                          >
+                            <Download className="w-3 h-3 mr-1" />
+                            Load Data
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
